@@ -140,6 +140,8 @@ body{
 .main{padding:16px 16px 110px;max-width:600px;margin:0 auto}
 .pg{display:none}.pg.on{display:block}
 .lbl{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin:22px 0 10px 2px}
+.lbl-core{font-size:15px;font-weight:700;color:var(--t1);letter-spacing:0;text-transform:none;margin:24px 0 12px 2px;display:flex;align-items:center;gap:8px}
+.lbl-core .ico{width:20px;height:20px;color:var(--blue)}
 
 /* ── STATS ROW ───────────────────────────── */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
@@ -151,17 +153,6 @@ body{
 .sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
 .sv{font-size:22px;font-weight:700;letter-spacing:-0.5px;font-variant-numeric:tabular-nums}
 .sl{font-size:10px;color:var(--t3);margin-top:3px;font-weight:500}
-
-/* ── TICKER ──────────────────────────────── */
-.ticker{
-  background:var(--s2);border:0.5px solid var(--b1);
-  border-radius:var(--r3);overflow:hidden;margin-bottom:14px;padding:9px 0;
-}
-.ticker-inner{display:flex;gap:20px;white-space:nowrap;animation:scroll 24s linear infinite}
-.ticker-inner:hover{animation-play-state:paused}
-@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.ti{font-size:12px;color:var(--t2);display:inline-flex;align-items:center;gap:5px;flex-shrink:0;padding:0 4px}
-.ti .up{color:var(--red)}.ti .dn{color:var(--green)}
 
 /* ── STOCK CARD ──────────────────────────── */
 .wl{display:flex;flex-direction:column;gap:10px}
@@ -201,17 +192,6 @@ body{
 .b-fund{background:rgba(191,90,242,.14);color:#d08af7;border:0.5px solid rgba(191,90,242,.25)}
 .b-policy{background:rgba(48,209,88,.14);color:#6de89c;border:0.5px solid rgba(48,209,88,.25)}
 .b-empty{background:var(--b1);color:var(--t3)}
-.rm-btn{
-  position:absolute;top:14px;right:14px;
-  width:24px;height:24px;border-radius:50%;
-  background:rgba(255,255,255,.06);border:none;
-  color:var(--t3);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;transition:opacity .2s,background .2s,color .2s;
-}
-.rm-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round}
-.sk:hover .rm-btn{opacity:1}
-.rm-btn:hover{background:rgba(255,69,58,.22);color:var(--red)}
 
 .data-tag{
   display:inline-flex;align-items:center;gap:3px;
@@ -221,6 +201,55 @@ body{
 .data-tag.live{background:rgba(48,209,88,.12);color:var(--green)}
 .data-tag.closed{background:rgba(255,255,255,.08);color:var(--t3)}
 .data-tag.demo{background:rgba(255,159,10,.12);color:var(--orange)}
+
+/* ── SWIPE TO DELETE ─────────────────────── */
+.sk-wrap{
+  position:relative;overflow:hidden;border-radius:var(--r4);
+}
+.sk-del{
+  position:absolute;right:0;top:0;bottom:0;width:80px;
+  background:var(--red);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;cursor:pointer;z-index:1;
+  border-radius:0 var(--r4) var(--r4) 0;
+}
+.sk-del svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-bottom:3px}
+.sk-del span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.sk-wrap .sk{
+  position:relative;z-index:2;
+  transition:transform .25s cubic-bezier(.25,.1,.25,1);
+  border-radius:var(--r4);
+}
+.sk-wrap.swiped .sk{
+  transform:translateX(-80px);
+}
+.sk.long-pressing{
+  background:rgba(255,69,58,.08)!important;
+  border-color:rgba(255,69,58,.3)!important;
+}
+
+/* ── SEARCH HISTORY ──────────────────────── */
+.sh-list{display:flex;flex-direction:column;gap:8px}
+.sh-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;background:var(--s2);
+  border:0.5px solid var(--b1);border-radius:var(--r2);
+  transition:background .15s,transform .1s;
+}
+.sh-item:active{transform:scale(.98)}
+.sh-info{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+.sh-name{font-size:14px;font-weight:500;color:var(--t1)}
+.sh-code{font-size:12px;color:var(--t3)}
+.sh-del{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(255,69,58,.1);border:none;
+  color:var(--red);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;flex-shrink:0;margin-left:8px;
+}
+.sh-del:hover{background:rgba(255,69,58,.25)}
+.sh-del svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.sh-empty{font-size:13px;color:var(--t3);text-align:center;padding:16px}
 
 /* ── DETAIL PANEL ────────────────────────── */
 .dp{
@@ -252,7 +281,7 @@ body{
 }
 .tab.on{background:var(--blue);color:#fff}
 .tab:hover:not(.on){background:var(--b2);color:var(--t2)}
-.al-list{max-height:400px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--b3) transparent}
+.al-list{max-height:60vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--b3) transparent;-webkit-overflow-scrolling:touch}
 .al-list::-webkit-scrollbar{width:3px}
 .al-list::-webkit-scrollbar-thumb{background:var(--b3);border-radius:2px}
 .al-item{
@@ -305,15 +334,6 @@ body{
 }
 .chip:hover{background:var(--s3);border-color:var(--b3);color:var(--t1)}
 .chip:active{transform:scale(.95)}
-.info-panel{background:var(--s2);border:0.5px solid var(--b1);border-radius:var(--r4);overflow:hidden}
-.ir{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;border-bottom:0.5px solid var(--b1);
-}
-.ir:last-child{border-bottom:none}
-.ir-l .ir-t{font-size:14px;font-weight:500;color:var(--t1);display:flex;align-items:center;gap:7px}
-.ir-l .ir-s{font-size:12px;color:var(--t3);margin-top:2px}
-.ir-l .ir-t .ico{width:18px;height:18px}
 
 /* ── PUSH PAGE ───────────────────────────── */
 .cfg-panel{background:var(--s2);border:0.5px solid var(--b1);border-radius:var(--r4);overflow:hidden;margin-bottom:10px}
@@ -433,17 +453,27 @@ body{
 .empty-ico svg{width:44px;height:44px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .empty-txt{font-size:14px;line-height:1.7}
 
-/* ── CONNECTION BANNER ───────────────────── */
-.conn-banner{
-  background:rgba(255,159,10,.1);border:0.5px solid rgba(255,159,10,.25);
-  border-radius:var(--r2);padding:10px 14px;margin-bottom:12px;
-  font-size:12px;display:flex;align-items:center;gap:8px;
+/* ── DELETE CONFIRM OVERLAY ──────────────── */
+.del-confirm{
+  position:fixed;inset:0;z-index:9998;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .15s ease;
 }
-.conn-banner.ok{
-  background:rgba(48,209,88,.08);border-color:rgba(48,209,88,.2);color:var(--green);
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.del-confirm-box{
+  background:var(--s2);border:0.5px solid var(--b2);
+  border-radius:var(--r4);padding:24px;width:min(80vw,300px);text-align:center;
 }
-.conn-banner:not(.ok){color:var(--orange)}
-.conn-banner svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.del-confirm-ttl{font-size:16px;font-weight:600;margin-bottom:8px}
+.del-confirm-txt{font-size:13px;color:var(--t2);margin-bottom:20px}
+.del-confirm-btns{display:flex;gap:10px}
+.del-confirm-btns button{
+  flex:1;padding:12px;border:none;border-radius:var(--r2);
+  font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;
+}
+.del-btn-cancel{background:var(--s3);color:var(--t1)}
+.del-btn-ok{background:var(--red);color:#fff}
 </style>
 </head>
 <body>
@@ -480,13 +510,6 @@ body{
 
   <!-- PAGE: 监控 -->
   <div class="pg on" id="pg-watch">
-    <div id="connBanner" class="conn-banner ok">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-      <span id="connTxt">正在连接行情数据源…</span>
-    </div>
-
-    <div id="ticker" style="display:none" class="ticker"></div>
-
     <div class="lbl">今日概览</div>
     <div class="stats">
       <div class="sc"><div class="sv" id="s-mon">0</div><div class="sl">监控中</div></div>
@@ -495,7 +518,7 @@ body{
       <div class="sc"><div class="sv" style="color:var(--yellow)" id="s-ntc">0</div><div class="sl">公告</div></div>
     </div>
 
-    <div class="lbl">我的监控</div>
+    <div class="lbl-core"><span class="ico" style="color:var(--blue)"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>我的监控</div>
     <div class="wl" id="wl"></div>
     <div id="dp" style="display:none"></div>
   </div>
@@ -524,13 +547,8 @@ body{
       <button class="srch-btn" onclick="doAdd(document.getElementById('si2').value,'pg')">添加</button>
     </div>
 
-    <div class="lbl">数据说明</div>
-    <div class="info-panel">
-      <div class="ir"><div class="ir-l"><div class="ir-t"><span class="ico" style="color:var(--teal)"><svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span> 数据来源</div><div class="ir-s">腾讯财经行情 + 东方财富新闻</div></div></div>
-      <div class="ir"><div class="ir-l"><div class="ir-t"><span class="ico" style="color:var(--orange)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span> 刷新频率</div><div class="ir-s">盘中每 60 秒，盘后每 5 分钟</div></div></div>
-      <div class="ir"><div class="ir-l"><div class="ir-t"><span class="ico" style="color:var(--purple)"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></span> 支持格式</div><div class="ir-s">A股6位代码（600519）· 港股代码（hk00700）</div></div></div>
-      <div class="ir"><div class="ir-l"><div class="ir-t"><span class="ico" style="color:var(--green)"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> 消息来源</div><div class="ir-s">东方财富实时个股新闻，自动分类</div></div></div>
-    </div>
+    <div class="lbl">查询记录</div>
+    <div id="searchHistory"></div>
   </div>
 
   <!-- PAGE: 推送 -->
@@ -546,7 +564,7 @@ body{
         <li>粘贴到下方输入框，开启开关即可</li>
       </ol>
       <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b2);font-size:12px;color:var(--t3)">
-        ⚠️ 浏览器直接打开时，推送请求可能被 CORS 策略拦截。建议通过本地服务器或部署后使用（见下方"安装为App"）。
+        ⚠️ 浏览器直接打开时，推送请求可能被 CORS 策略拦截。建议通过本地服务器或部署后使用。
       </div>
     </div>
 
@@ -611,16 +629,15 @@ body{
       <div class="cfg-row">
         <div class="cl">
           <div class="cl-t"><span class="ico" style="color:var(--green)"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> iPhone 安装</div>
-          <div class="ir-s" style="font-size:12px;color:var(--t3);margin-top:4px;line-height:1.7">
-            用 Safari 打开 → 底部分享按钮 → 添加到主屏幕<br>
-            即可全屏运行，体验接近原生 App
+          <div style="font-size:12px;color:var(--t3);margin-top:4px;line-height:1.7">
+            用 Safari 打开 → 底部分享按钮 → 添加到主屏幕<br>即可全屏运行，体验接近原生 App
           </div>
         </div>
       </div>
       <div class="cfg-row">
         <div class="cl">
           <div class="cl-t"><span class="ico" style="color:var(--teal)"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Android 安装</div>
-          <div class="ir-s" style="font-size:12px;color:var(--t3);margin-top:4px;line-height:1.7">
+          <div style="font-size:12px;color:var(--t3);margin-top:4px;line-height:1.7">
             ① Chrome 打开本页 → 右上角 ⋮ 菜单<br>
             ② 点击「添加到主屏幕」或「安装应用」<br>
             ③ 主屏幕出现图标，点击即可全屏运行<br>
@@ -630,20 +647,9 @@ body{
       </div>
       <div class="cfg-row">
         <div class="cl">
-          <div class="cl-t"><span class="ico" style="color:var(--orange)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span> 本地启动服务器</div>
-          <div class="ir-s" style="font-size:12px;color:var(--t3);margin-top:4px;line-height:1.7">
-            终端执行：<code style="color:var(--teal)">python3 -m http.server 8080</code><br>
-            浏览器访问 <code style="color:var(--teal)">http://localhost:8080/stock-monitor.html</code><br>
-            通过 HTTP 服务器访问可解决 CORS 推送问题
-          </div>
-        </div>
-      </div>
-      <div class="cfg-row">
-        <div class="cl">
           <div class="cl-t"><span class="ico" style="color:var(--purple)"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span> 免费部署上线</div>
-          <div class="ir-s" style="font-size:12px;color:var(--t3);margin-top:4px;line-height:1.7">
-            GitHub Pages / Vercel / Cloudflare Pages<br>
-            推送代码到仓库，自动生成 HTTPS 链接，手机直接访问
+          <div style="font-size:12px;color:var(--t3);margin-top:4px;line-height:1.7">
+            GitHub Pages / Vercel / Cloudflare Pages<br>推送代码到仓库，自动生成 HTTPS 链接
           </div>
         </div>
       </div>
@@ -680,7 +686,7 @@ body{
 
 <script>
 // ═══════════════════════════════════════
-// SVG ICON TEMPLATES (consistent flat style)
+// SVG ICON TEMPLATES
 // ═══════════════════════════════════════
 const I = {
   news: '<svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M18 18h-8M18 10h-8"/></svg>',
@@ -696,6 +702,7 @@ const I = {
   check: '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>',
   info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
   bell: '<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
+  trash: '<svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',
 };
 
 // ═══════════════════════════════════════
@@ -709,9 +716,17 @@ let selCode = null;
 let curTab = 'all';
 let timer = null;
 let apiOk = false;
-let _seenNews = new Set();   // 已展示过的新闻 key，避免重复推送
-let _firstLoad = {};          // 每只股票首次加载标记
-let _lastPushTime = {};       // 每只股票上次推送时间，限频 5 分钟
+let _seenNews = new Set();
+let _firstLoad = {};
+let _lastPushTime = {};
+let _searchHistory = JSON.parse(localStorage.getItem('sh1') || '[]');
+
+// swipe / long-press state
+let _touchStartX = 0;
+let _touchStartY = 0;
+let _touchCurrentWrap = null;
+let _longPressTimer = null;
+let _longPressCode = null;
 
 const NAME_MAP = {
   'sh600519':'贵州茅台','sz000858':'五粮液','sh600036':'招商银行',
@@ -732,6 +747,7 @@ window.onload = () => {
   updMkt();
   setInterval(updMkt, 30000);
   renderWL();
+  renderSearchHistory();
   renderEmptySum();
   if (wl.length > 0) { refreshAll(); startTimer(); }
 };
@@ -743,11 +759,11 @@ function isOpen() {
 }
 function mktStatus() {
   const n=new Date(),d=n.getDay(),h=n.getHours(),m=n.getMinutes();
-  if(d===0||d===6) return 'closed'; // 周末
+  if(d===0||d===6) return 'closed';
   const t=h*60+m;
-  if(t<9*60+30) return 'pre'; // 盘前
-  if(t<=11*60+30||(t>=13*60&&t<=15*60)) return 'open'; // 盘中
-  return 'after'; // 盘后
+  if(t<9*60+30) return 'pre';
+  if(t<=11*60+30||(t>=13*60&&t<=15*60)) return 'open';
+  return 'after';
 }
 function updMkt() {
   const n=new Date(),h=n.getHours(),m=n.getMinutes();
@@ -757,7 +773,6 @@ function updMkt() {
   if(st==='open'){dot.className='dot';txt.textContent=`交易中 ${pad(h)}:${pad(m)}`;}
   else{
     dot.className='dot off';
-    const d=n.getDay();
     if(st==='closed') txt.textContent='休市';
     else if(st==='pre') txt.textContent='未开盘';
     else txt.textContent=`已收盘 ${pad(h)}:${pad(m)}`;
@@ -770,6 +785,7 @@ function sw(name) {
   document.getElementById('pg-'+name).classList.add('on');
   document.getElementById('ni-'+name).classList.add('active');
   document.getElementById('hdSearch').style.display=name==='watch'?'block':'none';
+  if(name==='add') renderSearchHistory();
   if(name==='sum')renderSum();
 }
 
@@ -781,12 +797,14 @@ function doAdd(query,src) {
   if(!query){toast(I.info,'请输入股票代码或名称','');return;}
   const code=resolveCode(query);
   if(!code){toast(I.warn,'未能识别','请输入6位股票代码，如 600519');return;}
-  if(wl.find(s=>s.code===code)){toast(I.info,'已在监控中',NAME_MAP[code]||code);sw('watch');return;}
   const name=NAME_MAP[code]||query;
+  // Save search history
+  addSearchHistory(code, name);
+  if(wl.find(s=>s.code===code)){toast(I.info,'已在监控中',name);sw('watch');return;}
   wl.push({code,name,addedAt:Date.now()});
   saveWL();
   toast(I.check,'已添加监控','正在加载 '+name+' 数据…');
-  fetchQuote(code).then(()=>{renderWL();renderTicker();});
+  fetchQuote(code).then(()=>{renderWL();});
   startTimer();
   renderWL();
   sw('watch');
@@ -814,6 +832,138 @@ function removeStock(code) {
 function saveWL(){localStorage.setItem('wl2',JSON.stringify(wl));}
 
 // ═══════════════════════════════════════
+// SEARCH HISTORY
+// ═══════════════════════════════════════
+function addSearchHistory(code, name) {
+  // Remove duplicate if exists
+  _searchHistory = _searchHistory.filter(h => h.code !== code);
+  // Add to front
+  _searchHistory.unshift({code, name, time: Date.now()});
+  // Keep max 3
+  _searchHistory = _searchHistory.slice(0, 3);
+  localStorage.setItem('sh1', JSON.stringify(_searchHistory));
+  renderSearchHistory();
+}
+
+function deleteSearchHistory(code) {
+  _searchHistory = _searchHistory.filter(h => h.code !== code);
+  localStorage.setItem('sh1', JSON.stringify(_searchHistory));
+  renderSearchHistory();
+}
+
+function renderSearchHistory() {
+  const el = document.getElementById('searchHistory');
+  if (!el) return;
+  if (_searchHistory.length === 0) {
+    el.innerHTML = '<div class="sh-empty">暂无查询记录</div>';
+    return;
+  }
+  el.innerHTML = '<div class="sh-list">' + _searchHistory.map(h => `
+    <div class="sh-item">
+      <div class="sh-info" onclick="doAdd('${h.code}','${h.name.replace(/'/g,"\\'")}')">
+        <span class="sh-name">${h.name}</span>
+        <span class="sh-code">${h.code.toUpperCase()}</span>
+      </div>
+      <button class="sh-del" onclick="event.stopPropagation();deleteSearchHistory('${h.code}')">
+        <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  `).join('') + '</div>';
+}
+
+// ═══════════════════════════════════════
+// DELETE CONFIRM
+// ═══════════════════════════════════════
+function confirmDelete(code) {
+  const name = qd[code]?.name || wl.find(s=>s.code===code)?.name || code;
+  // Remove any existing confirm dialog
+  const existing = document.querySelector('.del-confirm');
+  if (existing) existing.remove();
+  // Reset swipe state
+  resetAllSwipes();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'del-confirm';
+  overlay.innerHTML = `
+    <div class="del-confirm-box">
+      <div class="del-confirm-ttl">删除监控</div>
+      <div class="del-confirm-txt">确定要将「${name}」从监控列表中移除吗？</div>
+      <div class="del-confirm-btns">
+        <button class="del-btn-cancel" onclick="this.closest('.del-confirm').remove()">取消</button>
+        <button class="del-btn-ok" onclick="removeStock('${code}');this.closest('.del-confirm').remove()">删除</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+// ═══════════════════════════════════════
+// SWIPE & LONG-PRESS HANDLERS
+// ═══════════════════════════════════════
+function resetAllSwipes() {
+  document.querySelectorAll('.sk-wrap.swiped').forEach(w => w.classList.remove('swiped'));
+  _touchCurrentWrap = null;
+}
+
+function handleTouchStart(e, code) {
+  const wrap = e.currentTarget;
+  _touchStartX = e.touches[0].clientX;
+  _touchStartY = e.touches[0].clientY;
+  _touchCurrentWrap = wrap;
+  _longPressCode = code;
+
+  // Reset other swiped items
+  document.querySelectorAll('.sk-wrap.swiped').forEach(w => {
+    if (w !== wrap) w.classList.remove('swiped');
+  });
+
+  // Long-press timer (600ms)
+  _longPressTimer = setTimeout(() => {
+    const sk = wrap.querySelector('.sk');
+    if (sk) sk.classList.add('long-pressing');
+    setTimeout(() => {
+      if (sk) sk.classList.remove('long-pressing');
+      confirmDelete(code);
+    }, 200);
+  }, 600);
+}
+
+function handleTouchMove(e) {
+  if (!_touchCurrentWrap) return;
+  const dx = e.touches[0].clientX - _touchStartX;
+  const dy = e.touches[0].clientY - _touchStartY;
+
+  // If moving more vertically, cancel swipe
+  if (Math.abs(dy) > Math.abs(dx)) {
+    clearTimeout(_longPressTimer);
+    _touchCurrentWrap.classList.remove('swiped');
+    return;
+  }
+
+  // If horizontal movement detected, cancel long-press
+  if (Math.abs(dx) > 10) {
+    clearTimeout(_longPressTimer);
+  }
+
+  // Swipe left
+  if (dx < -30) {
+    _touchCurrentWrap.classList.add('swiped');
+  } else if (dx > 30) {
+    _touchCurrentWrap.classList.remove('swiped');
+  }
+}
+
+function handleTouchEnd(e) {
+  clearTimeout(_longPressTimer);
+  const sk = e.currentTarget.querySelector('.sk');
+  if (sk) sk.classList.remove('long-pressing');
+  _touchCurrentWrap = null;
+}
+
+// ═══════════════════════════════════════
 // FETCH QUOTE (腾讯财经 qt.gtimg.cn)
 // ═══════════════════════════════════════
 function fetchQuote(code) {
@@ -834,16 +984,15 @@ function fetchQuote(code) {
       clearTimeout(to);if(done)return;finish();
       const raw=window[varName];
       if(raw&&typeof raw==='string'&&raw.length>10){
-        parseQQRaw(code,raw);apiOk=true;updConnBanner(true);
-      }else{mockQuote(code);updConnBanner(false,'数据为空');}
-      renderWL();renderTicker();
-      // Fetch real news after quote loads
+        parseQQRaw(code,raw);apiOk=true;
+      }else{mockQuote(code);}
+      renderWL();
       fetchRealNews(code);
       resolve();
     };
     script.onerror=()=>{
       clearTimeout(to);if(done)return;finish();
-      mockQuote(code);updConnBanner(false,'网络无法连接');resolve();
+      mockQuote(code);resolve();
     };
     script.src=`https://qt.gtimg.cn/q=${code}&_=${Date.now()}`;
     document.head.appendChild(script);
@@ -878,12 +1027,6 @@ function mockQuote(code) {
   qd[code]={name:n,price,prevClose:base,open:+(base*(1+(Math.random()-.5)*.005)).toFixed(2),high:+(price*(1+Math.random()*.015)).toFixed(2),low:+(price*(1-Math.random()*.015)).toFixed(2),vol:Math.floor(20000+Math.random()*200000),amount:+(1000+Math.random()*80000).toFixed(2),change,pct:+chgPct.toFixed(2),ok:false};
 }
 
-function updConnBanner(ok,reason) {
-  const b=document.getElementById('connBanner'),t=document.getElementById('connTxt');
-  if(ok){b.className='conn-banner ok';const st=mktStatus();t.textContent=st==='open'?'实时行情已连接，数据来自腾讯财经 + 东方财富':st==='after'?'今日收盘数据，来自腾讯财经 + 东方财富':'行情数据已连接，来自腾讯财经 + 东方财富';}
-  else{b.className='conn-banner';t.textContent=`行情连接失败（${reason}），当前显示演示数据`;}
-}
-
 // ═══════════════════════════════════════
 // FETCH REAL NEWS (东方财富 JSONP API)
 // ═══════════════════════════════════════
@@ -906,7 +1049,6 @@ function fetchRealNews(code) {
         const key = r.title.slice(0, 15);
         if (!seen.has(key)) { seen.add(key); unique.push(r); }
       });
-      // 检测新文章（首次加载不推送，后续刷新推送新文章）
       const newArts = unique.filter(a => {
         const k = a.title.slice(0, 20) + (a.source || '');
         if (_seenNews.has(k)) return false;
@@ -917,7 +1059,6 @@ function fetchRealNews(code) {
       calcStats();
       renderWL();
       if (selCode) drawDP(selCode);
-      // 自动推送新文章（首次加载只标记不推送）
       if (_firstLoad[code]) {
         autoPushNews(code, newArts);
       } else {
@@ -926,7 +1067,6 @@ function fetchRealNews(code) {
     }
   };
 
-  // Source 1: Search by stock name (sorted by time)
   const cb1 = '_nws' + (++_ncb);
   const s1 = document.createElement('script');
   let d1 = false;
@@ -946,7 +1086,6 @@ function fetchRealNews(code) {
   s1.onerror = () => { if (!d1) f1(); };
   document.head.appendChild(s1);
 
-  // Source 2: Search by stock code (sorted by time) — catches code-mentioning articles
   const cb2 = '_nws' + (++_ncb);
   const s2 = document.createElement('script');
   let d2 = false;
@@ -988,12 +1127,10 @@ function parseEMNews(data) {
   return articles.map(a => {
     const title = a.title || '';
     const content = a.content || '';
-    // Auto-categorize by keywords
     let t = 'news';
     if (/公告|业绩|年报|季报|分红|减持|增发|回购|股东/.test(title + content)) t = 'notice';
     else if (/资金|北向|流入|流出|融资|杠杆|大单|主力/.test(title + content)) t = 'fund';
     else if (/政策|监管|行业|部门|国务院|证监会|发改委/.test(title + content)) t = 'policy';
-    // Determine impact
     let impact = 'neutral';
     const bull = /上涨|利好|增长|增持|买入|看多|新高|突破|超预期|盈利/;
     const bear = /下跌|利空|下降|减持|卖出|看空|新低|破位|亏损|下滑|风险/;
@@ -1003,8 +1140,7 @@ function parseEMNews(data) {
     const ts = date ? new Date(date.replace(/-/g, '/')).getTime() : 0;
     return {
       t, impact, title, sum: content.slice(0, 120),
-      time: '',
-      ts,
+      time: '', ts,
       url: a.url || '',
       source: a.mediaName || '',
       id: a.code || String(Date.now()) + Math.random(),
@@ -1016,10 +1152,8 @@ function parseEMNews(data) {
 function autoPushNews(code, articles) {
   if (!cfg.sc || !cfg.key) return;
   if (!articles.length) return;
-  // 限频：同一股票 5 分钟内最多推送 1 次
   const now = Date.now();
   if (_lastPushTime[code] && now - _lastPushTime[code] < 300000) return;
-  // 按用户配置的推送规则过滤
   const filtered = articles.filter(a => {
     if (a.t === 'news' && !cfg.news) return false;
     if (a.t === 'notice' && !cfg.notice) return false;
@@ -1037,7 +1171,6 @@ function autoPushNews(code, articles) {
   });
   _lastPushTime[code] = now;
   pushWX(`【${stockName}】${filtered.length}条新动态`, body);
-  // 本地 toast 提示
   toast(I.bell, `${stockName} ${filtered.length}条新动态`, '已推送至微信');
 }
 
@@ -1079,10 +1212,9 @@ function startTimer() {
 }
 async function refreshAll() {
   for(const s of wl){await fetchQuote(s.code);}
-  renderWL();renderTicker();
+  renderWL();
   if(selCode)drawDP(selCode);
   checkLimits();
-  // 盘后仍刷新新闻
   for(const s of wl){fetchRealNews(s.code);}
 }
 function checkLimits() {
@@ -1098,7 +1230,7 @@ function checkLimits() {
 }
 
 // ═══════════════════════════════════════
-// RENDER WATCHLIST
+// RENDER WATCHLIST (with swipe-wrap)
 // ═══════════════════════════════════════
 function renderWL() {
   calcStats();
@@ -1119,27 +1251,29 @@ function renderWL() {
     const isSel=selCode===s.code;
     const mst=mktStatus();
     const dataTag=q?(q.ok?(mst==='open'?'<span class="data-tag live">● 实时</span>':mst==='after'?'<span class="data-tag closed">● 收盘</span>':'<span class="data-tag live">● 实时</span>'):'<span class="data-tag demo">● 演示</span>'):'';
-    return `<div class="sk${isSel?' sel':''}" onclick="togDP('${s.code}')">
-  <button class="rm-btn" onclick="event.stopPropagation();removeStock('${s.code}')">${I.close}</button>
-  <div class="sk-top">
-    <div><div class="sk-name">${q?.name||s.name}</div><div class="sk-code">${s.code.toUpperCase()}${dataTag}</div></div>
-    <div class="sk-price-blk">
-      <div class="sk-price ${pCls}">${priceStr}</div>
-      ${q?`<div class="sk-chg ${pCls}">${chgStr}</div>`:''}
+    return `<div class="sk-wrap" ontouchstart="handleTouchStart(event,'${s.code}')" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+  <div class="sk-del" onclick="event.stopPropagation();confirmDelete('${s.code}')"><span><svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>删除</span></div>
+  <div class="sk${isSel?' sel':''}" onclick="togDP('${s.code}')">
+    <div class="sk-top">
+      <div><div class="sk-name">${q?.name||s.name}</div><div class="sk-code">${s.code.toUpperCase()}${dataTag}</div></div>
+      <div class="sk-price-blk">
+        <div class="sk-price ${pCls}">${priceStr}</div>
+        ${q?`<div class="sk-chg ${pCls}">${chgStr}</div>`:''}
+      </div>
     </div>
-  </div>
-  ${q?`<div class="sk-meta">
-    <div class="sm">开 <span>${q.open.toFixed(2)}</span></div>
-    <div class="sm">高 <span style="color:var(--red)">${q.high.toFixed(2)}</span></div>
-    <div class="sm">低 <span style="color:var(--green)">${q.low.toFixed(2)}</span></div>
-    <div class="sm">量 <span>${(q.vol/10000).toFixed(1)}万手</span></div>
-  </div>`:''}
-  <div class="badges">
-    ${nc?`<div class="badge b-news">${nc} 新闻</div>`:''}
-    ${ntc?`<div class="badge b-notice">${ntc} 公告</div>`:''}
-    ${fc?`<div class="badge b-fund">${fc} 资金</div>`:''}
-    ${pc?`<div class="badge b-policy">${pc} 政策</div>`:''}
-    ${a.length===0?'<div class="badge b-empty">暂无提醒</div>':''}
+    ${q?`<div class="sk-meta">
+      <div class="sm">开 <span>${q.open.toFixed(2)}</span></div>
+      <div class="sm">高 <span style="color:var(--red)">${q.high.toFixed(2)}</span></div>
+      <div class="sm">低 <span style="color:var(--green)">${q.low.toFixed(2)}</span></div>
+      <div class="sm">量 <span>${(q.vol/10000).toFixed(1)}万手</span></div>
+    </div>`:''}
+    <div class="badges">
+      ${nc?`<div class="badge b-news">${nc} 新闻</div>`:''}
+      ${ntc?`<div class="badge b-notice">${ntc} 公告</div>`:''}
+      ${fc?`<div class="badge b-fund">${fc} 资金</div>`:''}
+      ${pc?`<div class="badge b-policy">${pc} 政策</div>`:''}
+      ${a.length===0?'<div class="badge b-empty">暂无提醒</div>':''}
+    </div>
   </div>
 </div>`;
   }).join('');
@@ -1153,7 +1287,10 @@ function togDP(code) {
   const dp=document.getElementById('dp');
   if(selCode===code){selCode=null;dp.style.display='none';renderWL();return;}
   selCode=code;curTab='all';renderWL();dp.style.display='block';drawDP(code);
-  setTimeout(()=>dp.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+  // Scroll the detail panel to the top of viewport
+  setTimeout(()=>{
+    dp.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
 }
 
 function drawDP(code) {
@@ -1197,21 +1334,6 @@ function drawDP(code) {
     :`<div class="empty-al"><div class="spin"></div>正在抓取最新消息…</div>`
   }</div>
 </div>`;
-}
-
-// ═══════════════════════════════════════
-// TICKER
-// ═══════════════════════════════════════
-function renderTicker() {
-  const el=document.getElementById('ticker');
-  if(wl.length===0){el.style.display='none';return;}
-  el.style.display='block';
-  const items=[...wl,...wl].map(s=>{
-    const q=qd[s.code];if(!q)return`<span class="ti">${s.name} <span>···</span></span>`;
-    const cls=q.pct>=0?'up':'dn';
-    return`<span class="ti">${q.name} <span class="${cls}">${q.pct>=0?'+':''}${q.pct.toFixed(2)}%</span></span>`;
-  }).join('');
-  el.innerHTML=`<div class="ticker-inner">${items}</div>`;
 }
 
 // ═══════════════════════════════════════
@@ -1270,7 +1392,6 @@ async function pushWX(title,body) {
   const url = `https://sctapi.ftqq.com/${key}.send`;
   const params = `title=${encodeURIComponent(title)}&desp=${encodeURIComponent(body)}`;
   try {
-    // 先尝试正常 CORS 请求（可读到响应）
     const res = await fetch(url, {
       method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded'},
@@ -1279,7 +1400,6 @@ async function pushWX(title,body) {
     const data = await res.json();
     return data.code === 0;
   } catch(e) {
-    // CORS 被拦截，改用 no-cors 模式（请求仍会发出，但无法读响应）
     try {
       await fetch(url, {
         method:'POST',
@@ -1287,7 +1407,7 @@ async function pushWX(title,body) {
         headers:{'Content-Type':'application/x-www-form-urlencoded'},
         body: params
       });
-      return true; // 请求已发出，假定成功
+      return true;
     } catch(e2) {
       console.error('Server Chan push failed:', e2);
       return false;
@@ -1301,36 +1421,30 @@ async function testPush() {
   toast(I.info,'正在发送…','请稍候');
   const ok = await pushWX('【股票雷达】推送测试',`当前监控：${names}\n\n发送时间：${new Date().toLocaleString('zh-CN')}`);
   if(ok){toast(I.check,'推送成功','请检查微信是否收到消息');}
-  else{toast(I.warn,'推送可能未送达','请检查 SendKey 是否正确，或查看浏览器控制台');}
+  else{toast(I.warn,'推送可能未送达','请检查 SendKey 是否正确');}
 }
 
 async function diagPush() {
   const issues = [];
-  // Step 1: 检查开关
   if (!cfg.sc) issues.push('❌ Server Chan 开关未开启');
   else issues.push('✅ Server Chan 开关已开启');
-  // Step 2: 检查 Key
   if (!cfg.key) issues.push('❌ SendKey 为空');
   else if (cfg.key.length < 10) issues.push('⚠️ SendKey 格式可能不正确（太短）');
   else issues.push('✅ SendKey 已填写（' + cfg.key.slice(0, 6) + '...）');
-  // Step 3: 检查协议
-  if (location.protocol === 'file:') issues.push('❌ 使用 file:// 协议打开，CORS 会被严格拦截，请用 HTTP 服务器访问');
+  if (location.protocol === 'file:') issues.push('❌ 使用 file:// 协议打开，CORS 会被严格拦截');
   else if (location.protocol === 'https:') issues.push('✅ 使用 HTTPS 协议，推送应可正常工作');
   else if (location.protocol === 'http:') {
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') issues.push('✅ 使用 localhost HTTP，推送可正常工作');
     else issues.push('⚠️ 使用非安全 HTTP，部分浏览器可能拦截');
   }
-  // Step 4: 尝试发送
   if (cfg.sc && cfg.key) {
     issues.push('🔄 正在尝试发送…');
     const ok = await pushWX('【股票雷达】诊断测试', `诊断时间：${new Date().toLocaleString('zh-CN')}\n协议：${location.protocol}\n主机：${location.hostname}`);
     if (ok) issues.push('✅ 推送请求已发出');
-    else issues.push('❌ 推送请求失败，请检查网络连接');
+    else issues.push('❌ 推送请求失败');
   }
-  // 显示结果
-  const report = issues.join('\n');
   toast(I.info, '推送诊断', issues[issues.length - 1].replace(/^[❌✅⚠️🔄]\s*/, ''));
-  console.log('=== 推送诊断报告 ===\n' + report);
+  console.log('=== 推送诊断报告 ===\n' + issues.join('\n'));
 }
 async function pushSummary() {
   if(wl.length===0){toast(I.info,'暂无监控股票','请先添加');return;}
@@ -1389,7 +1503,6 @@ let _deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   _deferredPrompt = e;
-  // 显示安装按钮
   const btn = document.getElementById('pwa-install-btn');
   if (btn) btn.style.display = 'flex';
 });
@@ -1413,6 +1526,13 @@ window.addEventListener('appinstalled', () => {
   toast(I.check, '安装完成', '主屏幕已添加股票雷达');
   const btn = document.getElementById('pwa-install-btn');
   if (btn) btn.style.display = 'none';
+});
+
+// Click outside swiped card to reset
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.sk-wrap')) {
+    resetAllSwipes();
+  }
 });
 </script>
 </body>
