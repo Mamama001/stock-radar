@@ -516,7 +516,8 @@ body{
     </div>
     <div class="mkt-pill">
       <div class="dot" id="mktDot"></div>
-      <span id="mktTxt">检测中</span>
+      <span id="mktTxt"></span>
+      <script>(function(){var n=new Date(),d=n.getDay(),h=n.getHours(),m=n.getMinutes(),t=h*60+m;var e=document.getElementById('mktTxt');if(!e)return;if(d===0||d===6){e.textContent='休市';}else if(t<9*60+30){e.textContent='未开盘';}else if(t<=11*60+30||(t>=13*60&&t<=15*60)){e.textContent='交易中 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}else{e.textContent='已收盘 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}})();</script>
     </div>
   </div>
   <div class="srch-wrap" id="hdSearch" style="display:none">
@@ -771,16 +772,23 @@ const NAME_MAP = {
 // INIT
 // ═══════════════════════════════════════
 window.onload = () => {
-  loadCfg();
+  try { loadCfg(); } catch(e) { console.warn('loadCfg error', e); }
   updMkt();
   setInterval(updMkt, 30000);
-  renderWL();          // Render cards immediately (shows ··· prices)
+  renderWL();
   renderSearchHistory();
   renderEmptySum();
-  if (wl.length > 0) {
-    refreshAll();      // Async - won't block UI
+
+  // Only fetch quotes and start timer during market hours
+  const st = mktStatus();
+  if (wl.length > 0 && (st === 'open' || st === 'pre')) {
+    refreshAll();
     startTimer();
+  } else if (wl.length > 0 && st === 'after') {
+    // After market: fetch once to get closing prices, then stop
+    refreshAll();
   }
+  // Closed: no fetching at all
 };
 
 function isOpen() {
@@ -800,6 +808,7 @@ function updMkt() {
   const n=new Date(),h=n.getHours(),m=n.getMinutes();
   const pad=v=>String(v).padStart(2,'0');
   const dot=document.getElementById('mktDot'),txt=document.getElementById('mktTxt');
+  if(!dot||!txt) return;
   const st=mktStatus();
   if(st==='open'){dot.className='dot';txt.textContent=`交易中 ${pad(h)}:${pad(m)}`;}
   else{
@@ -808,6 +817,8 @@ function updMkt() {
     else if(st==='pre') txt.textContent='未开盘';
     else txt.textContent=`已收盘 ${pad(h)}:${pad(m)}`;
   }
+  // Auto-start timer when market opens, auto-stop when closed
+  if(st==='open' && !timer && wl.length>0) startTimer();
 }
 
 function sw(name) {
@@ -834,9 +845,9 @@ function doAdd(query,src) {
   if(wl.find(s=>s.code===code)){toast(I.info,'已在监控中',name);sw('watch');return;}
   wl.push({code,name,addedAt:Date.now()});
   saveWL();
-  toast(I.check,'已添加监控','正在加载 '+name+' 数据…');
+  toast(I.check,'已添加监控', isOpen() ? '正在加载 '+name+' 数据…' : name+' 将在开盘后加载数据');
   fetchQuote(code).then(()=>{renderWL();});
-  startTimer();
+  if(isOpen()) startTimer();
   renderWL();
   sw('watch');
   if(src==='pg')document.getElementById('si2').value='';
@@ -1068,6 +1079,7 @@ function handleTouchEnd(e) {
 // ═══════════════════════════════════════
 function fetchQuote(code) {
   return new Promise(resolve => {
+    try {
     const varName='v_'+code;
     const script=document.createElement('script');
     let done=false;
@@ -1096,6 +1108,7 @@ function fetchQuote(code) {
     };
     script.src=`https://qt.gtimg.cn/q=${code}&_=${Date.now()}`;
     document.head.appendChild(script);
+    } catch(e) { console.warn('fetchQuote error', e); mockQuote(code); resolve(); }
   });
 }
 
@@ -1308,7 +1321,11 @@ function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v;
 // ═══════════════════════════════════════
 function startTimer() {
   if(timer)clearInterval(timer);
-  timer=setInterval(refreshAll,isOpen()?60000:mktStatus()==='after'?600000:1800000);
+  if(!isOpen()) return; // Only poll during market open
+  timer=setInterval(()=>{
+    if(isOpen()) refreshAll();
+    else { clearInterval(timer); timer=null; } // Auto-stop when market closes
+  },60000);
 }
 async function refreshAll() {
   // Parallel fetch all quotes
