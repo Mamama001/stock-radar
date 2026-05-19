@@ -774,10 +774,13 @@ window.onload = () => {
   loadCfg();
   updMkt();
   setInterval(updMkt, 30000);
-  renderWL();
+  renderWL();          // Render cards immediately (shows ··· prices)
   renderSearchHistory();
   renderEmptySum();
-  if (wl.length > 0) { refreshAll(); startTimer(); }
+  if (wl.length > 0) {
+    refreshAll();      // Async - won't block UI
+    startTimer();
+  }
 };
 
 function isOpen() {
@@ -1076,7 +1079,7 @@ function fetchQuote(code) {
         else mockQuote(code);
         resolve();
       }
-    },8000);
+    },3000);
     script.onload=()=>{
       clearTimeout(to);if(done)return;finish();
       const raw=window[varName];
@@ -1308,11 +1311,13 @@ function startTimer() {
   timer=setInterval(refreshAll,isOpen()?60000:mktStatus()==='after'?600000:1800000);
 }
 async function refreshAll() {
-  for(const s of wl){await fetchQuote(s.code);}
+  // Parallel fetch all quotes
+  await Promise.all(wl.map(s => fetchQuote(s.code)));
   renderWL();
   if(selCode)drawDP(selCode);
   checkLimits();
-  for(const s of wl){fetchRealNews(s.code);}
+  // Parallel fetch all news
+  wl.forEach(s => fetchRealNews(s.code));
 }
 function checkLimits() {
   if(!cfg.limit)return;
