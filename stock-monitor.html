@@ -449,6 +449,10 @@ body{
 <body>
 
 <div class="toasts" id="toasts"></div>
+<button id="pwa-install-btn" onclick="pwaInstall()" style="display:none;position:fixed;bottom:90px;right:16px;z-index:999;background:var(--blue);color:#fff;border:none;border-radius:22px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;align-items:center;gap:6px;box-shadow:0 4px 20px rgba(10,132,255,.4);animation:fadeUp .3s ease">
+  <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  安装App
+</button>
 
 <!-- HEADER -->
 <div class="hd">
@@ -1377,6 +1381,39 @@ if ('serviceWorker' in navigator) {
     console.log('SW registered');
   }).catch(() => {});
 }
+
+// ═══════════════════════════════════════
+// PWA INSTALL PROMPT
+// ═══════════════════════════════════════
+let _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  // 显示安装按钮
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'flex';
+});
+
+function pwaInstall() {
+  if (!_deferredPrompt) {
+    toast(I.info, '安装提示', '请用浏览器菜单中的"添加到主屏幕"来安装');
+    return;
+  }
+  _deferredPrompt.prompt();
+  _deferredPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      toast(I.check, '安装成功', '请从主屏幕打开');
+    }
+    _deferredPrompt = null;
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', () => {
+  toast(I.check, '安装完成', '主屏幕已添加股票雷达');
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'none';
+});
 </script>
 </body>
 </html>
