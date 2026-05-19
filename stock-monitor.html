@@ -516,8 +516,7 @@ body{
     </div>
     <div class="mkt-pill">
       <div class="dot" id="mktDot"></div>
-      <span id="mktTxt"></span>
-      <script>(function(){var n=new Date(),d=n.getDay(),h=n.getHours(),m=n.getMinutes(),t=h*60+m;var e=document.getElementById('mktTxt');if(!e)return;if(d===0||d===6){e.textContent='休市';}else if(t<9*60+30){e.textContent='未开盘';}else if(t<=11*60+30||(t>=13*60&&t<=15*60)){e.textContent='交易中 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}else{e.textContent='已收盘 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}})();</script>
+      <span id="mktTxt">加载中…</span>
     </div>
   </div>
   <div class="srch-wrap" id="hdSearch" style="display:none">
@@ -707,6 +706,18 @@ body{
 </div>
 
 <script>
+// Early: update market status ASAP (before full init)
+(function(){
+  var e=document.getElementById('mktTxt');
+  if(!e)return;
+  var n=new Date(),d=n.getDay(),h=n.getHours(),m=n.getMinutes(),t=h*60+m;
+  var dot=document.getElementById('mktDot');
+  if(d===0||d===6){e.textContent='休市';if(dot)dot.className='dot off';}
+  else if(t<9*60+30){e.textContent='未开盘';if(dot)dot.className='dot off';}
+  else if(t<=11*60+30||(t>=13*60&&t<=15*60)){e.textContent='交易中 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');if(dot)dot.className='dot';}
+  else{e.textContent='已收盘 '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');if(dot)dot.className='dot off';}
+})();
+
 // ═══════════════════════════════════════
 // SVG ICON TEMPLATES
 // ═══════════════════════════════════════
@@ -1099,7 +1110,7 @@ function fetchQuote(code) {
         parseQQRaw(code,raw);apiOk=true;
       }else{mockQuote(code);}
       renderWL();
-      fetchRealNews(code);
+      setTimeout(()=>fetchRealNews(code), 100);
       resolve();
     };
     script.onerror=()=>{
@@ -1184,7 +1195,7 @@ function fetchRealNews(code) {
   const s1 = document.createElement('script');
   let d1 = false;
   const f1 = () => { d1 = true; delete window[cb1]; if (s1.parentNode) s1.parentNode.removeChild(s1); };
-  setTimeout(() => { if (!d1) f1(); }, 8000);
+  setTimeout(() => { if (!d1) f1(); }, 3000);
   window[cb1] = (data) => {
     if (d1) return; f1();
     results.push(...parseEMNews(data));
@@ -1203,7 +1214,7 @@ function fetchRealNews(code) {
   const s2 = document.createElement('script');
   let d2 = false;
   const f2 = () => { d2 = true; delete window[cb2]; if (s2.parentNode) s2.parentNode.removeChild(s2); };
-  setTimeout(() => { if (!d2) f2(); }, 8000);
+  setTimeout(() => { if (!d2) f2(); }, 3000);
   window[cb2] = (data) => {
     if (d2) return; f2();
     results.push(...parseEMNews(data));
@@ -1333,8 +1344,10 @@ async function refreshAll() {
   renderWL();
   if(selCode)drawDP(selCode);
   checkLimits();
-  // Parallel fetch all news
-  wl.forEach(s => fetchRealNews(s.code));
+  // Only fetch news during market hours
+  if(isOpen()) {
+    setTimeout(()=>wl.forEach(s => fetchRealNews(s.code)), 200);
+  }
 }
 function checkLimits() {
   if(!cfg.limit)return;
