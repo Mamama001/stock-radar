@@ -148,9 +148,12 @@ body{
 .sc{
   background:var(--s2);border:0.5px solid var(--b1);
   border-radius:var(--r3);padding:14px 10px;text-align:center;
-  position:relative;overflow:hidden;
+  position:relative;overflow:hidden;cursor:pointer;
+  transition:transform .15s,background .15s;
 }
+.sc:active{transform:scale(.95);background:var(--s3)}
 .sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
+.sc::after{content:'›';position:absolute;right:6px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:12px;opacity:.5}
 .sv{font-size:22px;font-weight:700;letter-spacing:-0.5px;font-variant-numeric:tabular-nums}
 .sl{font-size:10px;color:var(--t3);margin-top:3px;font-weight:500}
 
@@ -566,10 +569,10 @@ body{
   <div class="pg on" id="pg-watch">
     <div class="lbl">今日概览</div>
     <div class="stats">
-      <div class="sc"><div class="sv" id="s-mon">0</div><div class="sl">监控中</div></div>
-      <div class="sc"><div class="sv" style="color:var(--orange)" id="s-alr">0</div><div class="sl">提醒</div></div>
-      <div class="sc"><div class="sv" style="color:var(--teal)" id="s-news">0</div><div class="sl">新闻</div></div>
-      <div class="sc"><div class="sv" style="color:var(--yellow)" id="s-ntc">0</div><div class="sl">公告</div></div>
+      <div class="sc" onclick="statTap('mon')"><div class="sv" id="s-mon">0</div><div class="sl">监控中</div></div>
+      <div class="sc" onclick="statTap('alr')"><div class="sv" style="color:var(--orange)" id="s-alr">0</div><div class="sl">提醒</div></div>
+      <div class="sc" onclick="statTap('news')"><div class="sv" style="color:var(--teal)" id="s-news">0</div><div class="sl">新闻</div></div>
+      <div class="sc" onclick="statTap('ntc')"><div class="sv" style="color:var(--yellow)" id="s-ntc">0</div><div class="sl">公告</div></div>
     </div>
 
     <div class="lbl-core"><span class="ico" style="color:var(--blue)"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>我的监控</div>
@@ -827,16 +830,12 @@ window.onload = () => {
   renderSearchHistory();
   renderEmptySum();
 
-  // Only fetch quotes and start timer during market hours
+  // Always fetch quotes so stocks are visible even after market close
   const st = mktStatus();
-  if (wl.length > 0 && (st === 'open' || st === 'pre')) {
+  if (wl.length > 0) {
     refreshAll();
-    startTimer();
-  } else if (wl.length > 0 && st === 'after') {
-    // After market: fetch once to get closing prices, then stop
-    refreshAll();
+    if (st === 'open') startTimer();
   }
-  // Closed: no fetching at all
 };
 
 function isOpen() {
@@ -1436,6 +1435,31 @@ function calcStats() {
 }
 function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 
+// 今日概览点击交互
+function statTap(type) {
+  if(type==='mon') {
+    // 滚动到"我的监控"区域
+    document.querySelector('.lbl-core')?.scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+  // 提醒/新闻/公告 → 找到第一只有对应数据的股票，展开详情面板并切换到对应tab
+  const tabMap = {alr:'all', news:'news', ntc:'notice'};
+  const filterMap = {alr:()=>true, news:x=>x.t==='news', ntc:x=>x.t==='notice'};
+  const target = wl.find(s => (ad[s.code]||[]).some(filterMap[type]));
+  if(!target) {
+    const labels={alr:'提醒',news:'新闻',ntc:'公告'};
+    toast(I.info,'暂无'+labels[type],'数据加载中或暂无此类信息');
+    return;
+  }
+  selCode = target.code;
+  curTab = tabMap[type];
+  renderWL();
+  const dp = document.getElementById('dp');
+  dp.style.display = 'block';
+  drawDP(target.code);
+  dp.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 // ═══════════════════════════════════════
 // FORMAT HELPERS
 // ═══════════════════════════════════════
@@ -1480,11 +1504,8 @@ async function refreshAll() {
   renderWL();
   if(selCode)drawDP(selCode);
   checkLimits();
-  // Fetch news during market hours
-  if(isOpen()) {
-    setTimeout(()=>wl.forEach(s => fetchRealNews(s.code)), 200);
-  }
-  // Fetch fund flow always (API returns data even after market close)
+  // Fetch news & fund flow always (data available even after market close)
+  setTimeout(()=>wl.forEach(s => fetchRealNews(s.code)), 200);
   setTimeout(()=>wl.forEach(s => fetchFundFlow(s.code)), 300);
 }
 function checkLimits() {
