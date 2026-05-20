@@ -495,6 +495,39 @@ body{
 }
 .del-btn-cancel{background:var(--s3);color:var(--t1)}
 .del-btn-ok{background:var(--red);color:#fff}
+
+/* ── FUND FLOW ──────────────────────────── */
+.ff-card{
+  background:linear-gradient(135deg,rgba(255,69,58,.06),rgba(48,209,88,.04));
+  border:0.5px solid var(--b2);
+  border-radius:var(--r3);padding:16px 18px;
+  margin:0 0 0 0;
+}
+.ff-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ff-label{font-size:12px;color:var(--t3);font-weight:600;letter-spacing:0.5px}
+.ff-pct{font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--r1)}
+.ff-pct.up{background:rgba(255,69,58,.14);color:var(--red)}
+.ff-pct.dn{background:rgba(48,209,88,.14);color:var(--green)}
+.ff-main-row{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+.ff-value{font-size:24px;font-weight:700;letter-spacing:-0.8px;font-variant-numeric:tabular-nums}
+.ff-value.up{color:var(--red)}.ff-value.dn{color:var(--green)}
+.ff-unit{font-size:13px;color:var(--t3)}
+.ff-bar{height:6px;background:var(--b1);border-radius:3px;overflow:hidden;margin-bottom:14px}
+.ff-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.ff-bar-fill.in{background:linear-gradient(90deg,var(--red),#ff6961)}
+.ff-bar-fill.out{background:linear-gradient(90deg,var(--green),#4cd964)}
+.ff-rows{display:flex;flex-direction:column;gap:0}
+.ff-row{display:flex;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--b1)}
+.ff-row:last-child{border-bottom:none}
+.ff-row-label{font-size:12px;color:var(--t3);width:50px;flex-shrink:0}
+.ff-row-bar{flex:1;height:3px;background:var(--b1);border-radius:2px;margin:0 10px;overflow:hidden}
+.ff-row-bar-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.ff-row-bar-fill.in{background:var(--red)}
+.ff-row-bar-fill.out{background:var(--green)}
+.ff-row-value{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;width:70px;text-align:right;flex-shrink:0}
+.ff-row-value.up{color:var(--red)}.ff-row-value.dn{color:var(--green)}
+.ff-row-pct{font-size:11px;color:var(--t3);width:50px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.ff-empty{text-align:center;padding:20px;color:var(--t3);font-size:13px}
 </style>
 </head>
 <body>
@@ -736,12 +769,17 @@ const I = {
   info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
   bell: '<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
   trash: '<svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',
+  arrowUp: '<svg viewBox="0 0 24 24" style="width:10px;height:10px;vertical-align:middle;margin-right:1px"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  arrowDn: '<svg viewBox="0 0 24 24" style="width:10px;height:10px;vertical-align:middle;margin-right:1px"><path d="M12 5v14M19 12l-7 7-7-7" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 
 // ═══════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════
+// 首次访问预置示例股票，方便预览
+const _DEMO = ['sh600519','sz000001','sz002594','sh688981','sz300750'];
 let wl = JSON.parse(localStorage.getItem('wl2') || '[]');
+if(!wl.length){ wl=_DEMO.slice(); localStorage.setItem('wl2',JSON.stringify(wl)); }
 let cfg = JSON.parse(localStorage.getItem('cfg2') || '{}');
 let qd = {};
 let ad = {};
@@ -753,6 +791,7 @@ let _seenNews = new Set();
 let _firstLoad = {};
 let _lastPushTime = {};
 let _searchHistory = JSON.parse(localStorage.getItem('sh1') || '[]');
+let fd = {}; // fund flow data
 
 // swipe / long-press state
 let _touchStartX = 0;
@@ -855,7 +894,7 @@ function doAdd(query,src) {
   wl.push({code,name,addedAt:Date.now()});
   saveWL();
   toast(I.check,'已添加监控', isOpen() ? '正在加载 '+name+' 数据…' : name+' 将在开盘后加载数据');
-  fetchQuote(code).then(()=>{renderWL();});
+  fetchQuote(code).then(()=>{fetchFundFlow(code);renderWL();});
   if(isOpen()) startTimer();
   renderWL();
   sw('watch');
@@ -1129,12 +1168,27 @@ function parseQQRaw(code,raw) {
   const prevClose=parseFloat(parts[4])||price;
   const open=parseFloat(parts[5])||price;
   const vol=parseInt(parts[6])||0;
+  const outerVol=parseInt(parts[7])||0;  // 外盘(主动买入,手)
+  const innerVol=parseInt(parts[8])||0;  // 内盘(主动卖出,手)
   const high=parseFloat(parts[33])||price;
   const low=parseFloat(parts[34])||price;
-  const amount=parseFloat(parts[37])||0;
+  const amount=parseFloat(parts[37])||0; // 成交额(万)
   const change=+(price-prevClose).toFixed(2);
   const pct=prevClose?+(change/prevClose*100).toFixed(2):0;
-  qd[code]={name,price,prevClose,open,vol,high,low,amount,change,pct,ok:true};
+  // Extended fields (corrected mapping)
+  const turnover=parseFloat(parts[38])||0;    // 换手率%
+  const pe=parseFloat(parts[39])||0;          // PE(市盈率)
+  const amplitude=parseFloat(parts[43])||0;    // 振幅%
+  const pb=parseFloat(parts[46])||0;          // PB(市净率)
+  const limitUp=parseFloat(parts[47])||0;     // 涨停价
+  const limitDn=parseFloat(parts[48])||0;     // 跌停价
+  const volRatio=parseFloat(parts[49])||0;    // 量比
+  const totalMv=parseFloat(parts[44])||0;     // 总市值(亿)
+  const circMv=parseFloat(parts[45])||0;      // 流通市值(亿)
+  // 外盘/内盘差 → 粗略主力方向
+  const outInDiff=outerVol-innerVol; // >0=买方强, <0=卖方强
+  const outInRatio=vol?((outerVol/vol)*100).toFixed(1):0; // 外盘占比%
+  qd[code]={name,price,prevClose,open,vol,outerVol,innerVol,high,low,amount,change,pct,ok:true,turnover,volRatio,pe,pb,amplitude,limitUp,limitDn,totalMv,circMv,outInDiff,outInRatio};
   const s=wl.find(x=>x.code===code);
   if(s&&name){s.name=name;saveWL();}
 }
@@ -1146,7 +1200,7 @@ function mockQuote(code) {
   const chgPct=(Math.random()-0.48)*8;
   const price=+(base*(1+chgPct/100)).toFixed(2);
   const change=+(price-base).toFixed(2);
-  qd[code]={name:n,price,prevClose:base,open:+(base*(1+(Math.random()-.5)*.005)).toFixed(2),high:+(price*(1+Math.random()*.015)).toFixed(2),low:+(price*(1-Math.random()*.015)).toFixed(2),vol:Math.floor(20000+Math.random()*200000),amount:+(1000+Math.random()*80000).toFixed(2),change,pct:+chgPct.toFixed(2),ok:false};
+  qd[code]={name:n,price,prevClose:base,open:+(base*(1+(Math.random()-.5)*.005)).toFixed(2),high:+(price*(1+Math.random()*.015)).toFixed(2),low:+(price*(1-Math.random()*.015)).toFixed(2),vol:Math.floor(20000+Math.random()*200000),outerVol:Math.floor(10000+Math.random()*100000),innerVol:Math.floor(10000+Math.random()*100000),amount:+(1000+Math.random()*80000).toFixed(2),change,pct:+chgPct.toFixed(2),ok:false,turnover:+(Math.random()*8).toFixed(2),volRatio:+(0.5+Math.random()*2).toFixed(2),pe:+(10+Math.random()*60).toFixed(1),pb:+(1+Math.random()*8).toFixed(2),amplitude:+((Math.random()*5+0.5)).toFixed(2),limitUp:+(base*1.1).toFixed(2),limitDn:+(base*0.9).toFixed(2),totalMv:Math.floor(100+Math.random()*50000),circMv:Math.floor(80+Math.random()*40000),outInDiff:Math.floor((Math.random()-0.5)*20000),outInRatio:+(50+(Math.random()-0.5)*30).toFixed(1)};
 }
 
 // ═══════════════════════════════════════
@@ -1271,6 +1325,63 @@ function parseEMNews(data) {
   }).sort((a, b) => (b.ts || 0) - (a.ts || 0));
 }
 
+// ═══════════════════════════════════════
+// FETCH FUND FLOW (东方财富资金流 JSONP)
+// ═══════════════════════════════════════
+function fetchFundFlow(code) {
+  const secid = toSecId(code);
+  if (!secid) return Promise.resolve(); // HK/US not supported
+  return new Promise(resolve => {
+    const cb = '_ff' + (++_ncb);
+    const script = document.createElement('script');
+    let done = false;
+    const finish = () => { done = true; delete window[cb]; if (script.parentNode) script.parentNode.removeChild(script); };
+    setTimeout(() => { if (!done) { finish(); resolve(); } }, 5000);
+    window[cb] = (data) => {
+      if (done) return; finish();
+      parseFundFlow(code, data);
+      renderWL();
+      if (selCode) drawDP(selCode);
+      resolve();
+    };
+    // Use klt=101 (daily) + lmt=1 (last 1 day) — returns data even after market close
+    script.src = `https://push2.eastmoney.com/api/qt/stock/fflow/kline/get?cb=${cb}&secid=${secid}&fields1=f1,f2,f3,f7&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65&klt=101&lmt=1&ut=b7284422df7246e1bba3d0f67fda9534&_=${Date.now()}`;
+    script.onerror = () => { if (!done) { finish(); resolve(); } };
+    document.head.appendChild(script);
+  });
+}
+
+function parseFundFlow(code, data) {
+  try {
+    // API returns: data.klines = ["2026-05-20,-633552080.0,-773856.0,634325952.0,-150189040.0,-483363040.0,-10.10,-0.01,10.11,-2.39,-7.71,1315.00,-0.70,0.00,0.00"]
+    const klines = data?.data?.klines;
+    if (!klines || !klines.length) return;
+    const last = klines[klines.length - 1];
+    if (typeof last !== 'string') return;
+    const v = last.split(',');
+    // Field mapping:
+    // [0] date  [1] 主力净流入(元)  [2] 小单净流入  [3] 中单净流入  [4] 大单净流入  [5] 超大单净流入
+    // [6] 主力净流入占比%  [7] 小单占比%  [8] 中单占比%  [9] 大单占比%  [10] 超大单占比%
+    // [11] 收盘价  [12] 涨跌幅%  [13] ?  [14] ?
+    if (v.length < 11) return;
+    fd[code] = {
+      mainNet: parseFloat(v[1]) || 0,      // 主力净流入(元)
+      smallNet: parseFloat(v[2]) || 0,      // 小单净流入
+      midNet: parseFloat(v[3]) || 0,        // 中单净流入
+      bigNet: parseFloat(v[4]) || 0,        // 大单净流入
+      hugeNet: parseFloat(v[5]) || 0,       // 超大单净流入
+      mainPct: parseFloat(v[6]) || 0,       // 主力净流入占比%
+      smallPct: parseFloat(v[7]) || 0,
+      midPct: parseFloat(v[8]) || 0,
+      bigPct: parseFloat(v[9]) || 0,
+      hugePct: parseFloat(v[10]) || 0,
+      ts: Date.now(),
+    };
+  } catch (e) {
+    console.warn('parseFundFlow error', code, e);
+  }
+}
+
 function autoPushNews(code, articles) {
   if (!cfg.sc || !cfg.key) return;
   if (!articles.length) return;
@@ -1326,6 +1437,33 @@ function calcStats() {
 function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 
 // ═══════════════════════════════════════
+// FORMAT HELPERS
+// ═══════════════════════════════════════
+function fmtAmt(wan) {
+  if (!wan || isNaN(wan)) return '—';
+  const abs = Math.abs(wan);
+  if (abs >= 10000) return (wan / 10000).toFixed(2) + '亿';
+  if (abs >= 1) return wan.toFixed(0) + '万';
+  return wan.toFixed(2) + '万';
+}
+function fmtFlow(valYuan) {
+  if (valYuan === undefined || valYuan === null || isNaN(valYuan)) return '—';
+  const wan = valYuan / 10000;
+  const abs = Math.abs(wan);
+  const sign = valYuan >= 0 ? '+' : '';
+  if (abs >= 10000) return sign + (wan / 10000).toFixed(2) + '亿';
+  if (abs >= 1) return sign + wan.toFixed(0) + '万';
+  return sign + wan.toFixed(2) + '万';
+}
+function flowCls(v) { return v >= 0 ? 'up' : 'dn'; }
+function toSecId(code) {
+  if (code.startsWith('sh')) return '1.' + code.slice(2);
+  if (code.startsWith('sz')) return '0.' + code.slice(2);
+  if (code.startsWith('bj')) return '0.' + code.slice(2);
+  return null;
+}
+
+// ═══════════════════════════════════════
 // TIMER
 // ═══════════════════════════════════════
 function startTimer() {
@@ -1342,10 +1480,12 @@ async function refreshAll() {
   renderWL();
   if(selCode)drawDP(selCode);
   checkLimits();
-  // Only fetch news during market hours
+  // Fetch news during market hours
   if(isOpen()) {
     setTimeout(()=>wl.forEach(s => fetchRealNews(s.code)), 200);
   }
+  // Fetch fund flow always (API returns data even after market close)
+  setTimeout(()=>wl.forEach(s => fetchFundFlow(s.code)), 300);
 }
 function checkLimits() {
   if(!cfg.limit)return;
@@ -1392,17 +1532,20 @@ function renderWL() {
       </div>
     </div>
     ${q?`<div class="sk-meta">
-      <div class="sm">开 <span>${q.open.toFixed(2)}</span></div>
       <div class="sm">高 <span style="color:var(--red)">${q.high.toFixed(2)}</span></div>
       <div class="sm">低 <span style="color:var(--green)">${q.low.toFixed(2)}</span></div>
       <div class="sm">量 <span>${(q.vol/10000).toFixed(1)}万手</span></div>
+      <div class="sm">额 <span>${fmtAmt(q.amount)}</span></div>
+      <div class="sm">换 <span style="color:${q.turnover>=5?'var(--red)':q.turnover>=3?'var(--orange)':'var(--t2)'}">${q.turnover?I.arrowUp:''}${q.turnover||'—'}%</span></div>
+      <div class="sm">量比 <span style="color:${q.volRatio>=2?'var(--red)':q.volRatio>=1?'var(--orange)':'var(--t2)'}">${q.volRatio>=1?I.arrowUp:I.arrowDn}${q.volRatio||'—'}</span></div>
     </div>`:''}
     <div class="badges">
       ${nc?`<div class="badge b-news">${nc} 新闻</div>`:''}
       ${ntc?`<div class="badge b-notice">${ntc} 公告</div>`:''}
       ${fc?`<div class="badge b-fund">${fc} 资金</div>`:''}
       ${pc?`<div class="badge b-policy">${pc} 政策</div>`:''}
-      ${a.length===0?'<div class="badge b-empty">暂无提醒</div>':''}
+      ${fd[s.code]?`<div class="badge" style="background:${fd[s.code].mainNet>=0?'rgba(255,69,58,.14)':'rgba(48,209,88,.14)'};color:${fd[s.code].mainNet>=0?'var(--red)':'var(--green)'};border:0.5px solid ${fd[s.code].mainNet>=0?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}">${fd[s.code].mainNet>=0?I.arrowUp:I.arrowDn}主力 ${fmtFlow(fd[s.code].mainNet)}</div>`:`${q&&q.outerVol?`<div class="badge" style="background:${q.outInDiff>=0?'rgba(255,69,58,.14)':'rgba(48,209,88,.14)'};color:${q.outInDiff>=0?'var(--red)':'var(--green)'};border:0.5px solid ${q.outInDiff>=0?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}">${q.outInDiff>=0?I.arrowUp:I.arrowDn}外盘${q.outInRatio}%</div>`:''}`}
+      ${a.length===0&&!fd[s.code]&&!q?.outerVol?'<div class="badge b-empty">暂无提醒</div>':''}
     </div>
   </div>
 </div>`;
@@ -1423,6 +1566,99 @@ function togDP(code) {
   },80);
 }
 
+function buildFundFlowCard(code) {
+  const f = fd[code];
+  const q = qd[code];
+  if (!q) return '';
+  
+  // Primary: use Eastmoney fund flow data if available
+  if (f && f.ts) {
+    const mainDir = flowCls(f.mainNet);
+    const mainVal = fmtFlow(f.mainNet);
+    const mainPctStr = (f.mainPct >= 0 ? '+' : '') + f.mainPct.toFixed(2) + '%';
+    const mainArrow = f.mainNet >= 0 ? I.arrowUp : I.arrowDn;
+    const barPct = Math.min(100, Math.max(0, 50 + f.mainPct * 2));
+    const barDir = f.mainNet >= 0 ? 'in' : 'out';
+    const maxAbs = Math.max(Math.abs(f.hugeNet), Math.abs(f.bigNet), Math.abs(f.midNet), Math.abs(f.smallNet), 1);
+    const ffRow = (label, net, pct) => {
+      const dir = flowCls(net);
+      const arrow = net >= 0 ? I.arrowUp : I.arrowDn;
+      return `<div class="ff-row">
+        <div class="ff-row-label">${label}</div>
+        <div class="ff-row-bar"><div class="ff-row-bar-fill ${dir}" style="width:${(Math.abs(net)/maxAbs*100).toFixed(0)}%"></div></div>
+        <div class="ff-row-value ${dir}">${arrow}${fmtFlow(net)}</div>
+        <div class="ff-row-pct">${(pct>=0?'+':'')}${pct.toFixed(2)}%</div>
+      </div>`;
+    };
+    return `<div class="ff-card">
+    <div class="ff-head">
+      <div class="ff-label">主力资金流向</div>
+      <div class="ff-pct ${mainDir}">${mainArrow}${mainPctStr}</div>
+    </div>
+    <div class="ff-main-row">
+      <div class="ff-value ${mainDir}">${mainArrow}${mainVal}</div>
+      <div class="ff-unit">主力净流入</div>
+    </div>
+    <div class="ff-bar"><div class="ff-bar-fill ${barDir}" style="width:${barPct}%"></div></div>
+    <div class="ff-rows">
+      ${ffRow('超大单', f.hugeNet, f.hugePct)}
+      ${ffRow('大单', f.bigNet, f.bigPct)}
+      ${ffRow('中单', f.midNet, f.midPct)}
+      ${ffRow('小单', f.smallNet, f.smallPct)}
+    </div>
+  </div>`;
+  }
+  
+  // Fallback: use QQ finance 外盘/内盘 to show buy/sell pressure
+  const diff = q.outerVol - q.innerVol;
+  const diffDir = diff >= 0 ? 'up' : 'dn';
+  const diffArrow = diff >= 0 ? I.arrowUp : I.arrowDn;
+  const diffStr = (diff >= 0 ? '+' : '') + (diff >= 0 ? diff : -diff) + '手';
+  const ratio = q.outInRatio || (q.vol ? (q.outerVol / q.vol * 100).toFixed(1) : 0);
+  const barPct = Math.min(100, Math.max(0, parseFloat(ratio)));
+  const barDir = diff >= 0 ? 'in' : 'out';
+  const outerPct = ratio + '%';
+  const innerPct = (100 - parseFloat(ratio)).toFixed(1) + '%';
+
+  return `<div class="ff-card">
+  <div class="ff-head">
+    <div class="ff-label">买卖盘力量</div>
+    <div class="ff-pct ${diffDir}">${diffArrow}外盘${outerPct}</div>
+  </div>
+  <div class="ff-main-row">
+    <div class="ff-value ${diffDir}">${diffArrow}${diffStr}</div>
+    <div class="ff-unit">${diff>=0?'买方占优':'卖方占优'}</div>
+  </div>
+  <div class="ff-bar"><div class="ff-bar-fill ${barDir}" style="width:${barPct}%"></div></div>
+  <div class="ff-rows">
+    <div class="ff-row">
+      <div class="ff-row-label">外盘</div>
+      <div class="ff-row-bar"><div class="ff-row-bar-fill in" style="width:${barPct}%"></div></div>
+      <div class="ff-row-value up">${I.arrowUp}${q.outerVol}手</div>
+      <div class="ff-row-pct">${outerPct}</div>
+    </div>
+    <div class="ff-row">
+      <div class="ff-row-label">内盘</div>
+      <div class="ff-row-bar"><div class="ff-row-bar-fill out" style="width:${100-barPct}%"></div></div>
+      <div class="ff-row-value dn">${I.arrowDn}${q.innerVol}手</div>
+      <div class="ff-row-pct">${innerPct}</div>
+    </div>
+    <div class="ff-row">
+      <div class="ff-row-label">换手率</div>
+      <div class="ff-row-bar"><div class="ff-row-bar-fill ${q.turnover>=5?'in':'out'}" style="width:${Math.min(100,q.turnover*10)}%"></div></div>
+      <div class="ff-row-value ${q.turnover>=5?'up':'dn'}">${q.turnover>=5?I.arrowUp:I.arrowDn}${q.turnover||0}%</div>
+      <div class="ff-row-pct">${q.turnover>=5?'活跃':'平淡'}</div>
+    </div>
+    <div class="ff-row">
+      <div class="ff-row-label">量比</div>
+      <div class="ff-row-bar"><div class="ff-row-bar-fill ${q.volRatio>=1?'in':'out'}" style="width:${Math.min(100,q.volRatio*50)}%"></div></div>
+      <div class="ff-row-value ${q.volRatio>=1?'up':'dn'}">${q.volRatio>=1?I.arrowUp:I.arrowDn}${q.volRatio||0}</div>
+      <div class="ff-row-pct">${q.volRatio>=2?'放量':q.volRatio>=1?'正常':'缩量'}</div>
+    </div>
+  </div>
+</div>`;
+}
+
 function drawDP(code) {
   const dp=document.getElementById('dp');
   const s=wl.find(x=>x.code===code);if(!s)return;
@@ -1438,8 +1674,9 @@ function drawDP(code) {
   dp.innerHTML=`<div class="dp">
   <div class="dp-head">
     <div class="dp-title">${qd[code]?.name||s.name} · 实时动态</div>
-    <div class="dp-refresh" onclick="fetchQuote('${code}').then(()=>{fetchRealNews('${code}');renderWL()})">${I.refresh} 刷新</div>
+    <div class="dp-refresh" onclick="fetchQuote('${code}').then(()=>{fetchRealNews('${code}');fetchFundFlow('${code}');renderWL()})">${I.refresh} 刷新</div>
   </div>
+  ${buildFundFlowCard(code)}
   <div class="dp-tabs">${tabData.map(t=>`<button class="tab${curTab===t.k?' on':''}" onclick="curTab='${t.k}';drawDP('${code}')">${t.lbl} ${t.count}</button>`).join('')}</div>
   <div class="al-list">${
     list.length?list.map(a=>{
@@ -1503,6 +1740,10 @@ function renderSum() {
         <div class="rep-r"><div class="rep-rl">${priceLabel}</div><div class="rep-rr">¥${q?.price.toFixed(2)||'–'}</div></div>
         <div class="rep-r"><div class="rep-rl">涨跌额</div><div class="rep-rr" style="color:${q?.pct>=0?'var(--red)':'var(--green)'}">${q?(q.pct>=0?'+':'')+q.change.toFixed(2):'–'}</div></div>
         <div class="rep-r"><div class="rep-rl">振幅</div><div class="rep-rr">${q?((q.high-q.low)/q.prevClose*100).toFixed(2)+'%':'–'}</div></div>
+        <div class="rep-r"><div class="rep-rl">换手率</div><div class="rep-rr" style="color:${q?.turnover>=5?'var(--red)':q?.turnover>=3?'var(--orange)':'var(--t2)'}">${q?.turnover?(q.turnover>=3?I.arrowUp:'')+q.turnover+'%':'–'}</div></div>
+        <div class="rep-r"><div class="rep-rl">量比</div><div class="rep-rr" style="color:${q?.volRatio>=2?'var(--red)':q?.volRatio>=1?'var(--orange)':'var(--t2)'}">${q?.volRatio?(q.volRatio>=1?I.arrowUp:I.arrowDn)+q.volRatio:'–'}</div></div>
+        <div class="rep-r"><div class="rep-rl">成交额</div><div class="rep-rr">${q?.amount?fmtAmt(q.amount):'–'}</div></div>
+        ${fd[s.code]?`<div class="rep-r"><div class="rep-rl">主力净流入</div><div class="rep-rr" style="color:${fd[s.code].mainNet>=0?'var(--red)':'var(--green)'}">${fd[s.code].mainNet>=0?I.arrowUp:I.arrowDn}${fmtFlow(fd[s.code].mainNet)}</div></div>`:''}
         <div class="rep-r"><div class="rep-rl">利好事件</div><div class="rep-rr" style="color:var(--red)">${bull} 条</div></div>
         <div class="rep-r"><div class="rep-rl">利空事件</div><div class="rep-rr" style="color:var(--green)">${bear} 条</div></div>
         ${a.slice(0,2).map(x=>`<div class="rep-r"><div class="rep-rl" style="font-size:12px;color:var(--t3)">${x.title.slice(0,26)}…${x.source?' · '+x.source:''}</div><div class="rep-rr"><span class="itag it-${x.impact}">${x.impact==='bull'?'利好':x.impact==='bear'?'利空':'中性'}</span></div></div>`).join('')}
@@ -1581,7 +1822,7 @@ async function pushSummary() {
   const st=mktStatus();
   const pushLabel=st==='open'?'盘中速览':st==='after'?'盘后汇总':'行情概览';
   let md=`# 股票雷达 · 今日${pushLabel}\n\n> ${new Date().toLocaleDateString('zh-CN')} ${pushLabel}\n\n## 涨跌一览\n\n`;
-  wl.forEach(s=>{const q=qd[s.code];if(!q)return;md+=`**${q.name}**（${s.code}）收盘价 **¥${q.price.toFixed(2)}** ${q.pct>=0?'+':''}${q.pct.toFixed(2)}%\n\n`;});
+  wl.forEach(s=>{const q=qd[s.code];if(!q)return;const ff=fd[s.code];md+=`**${q.name}**（${s.code}）${st==='open'?'最新':'收盘'}价 **¥${q.price.toFixed(2)}** ${q.pct>=0?'+':''}${q.pct.toFixed(2)}%${ff?` | 主力${fmtFlow(ff.mainNet)}`:''}\n\n`;});
   md+=`## 今日重要资讯\n\n`;
   wl.forEach(s=>{const a=(ad[s.code]||[]).slice(0,3);if(!a.length)return;md+=`### ${qd[s.code]?.name||s.name}\n`;a.forEach(x=>{md+=`- **${x.title}**${x.source?' ('+x.source+')':''}\n`;});md+='\n';});
   md+=`---\n*由股票雷达 App 自动生成 · ${new Date().toLocaleString('zh-CN')}*`;

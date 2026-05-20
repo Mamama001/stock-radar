@@ -1,4 +1,4 @@
-const CACHE = 'stock-radar-v6';
+const CACHE = 'stock-radar-v8';
 const ASSETS = ['./stock-monitor.html', './manifest.json', './icon-192.svg', './icon-512.svg'];
 
 self.addEventListener('install', e => {
