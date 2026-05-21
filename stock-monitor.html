@@ -780,8 +780,19 @@ const I = {
 // STATE
 // ═══════════════════════════════════════
 // 首次访问预置示例股票，方便预览
-const _DEMO = ['sh600519','sz000001','sz002594','sh688981','sz300750'];
+const _DEMO = [
+  {code:'sh600519',name:'贵州茅台'},
+  {code:'sz000001',name:'平安银行'},
+  {code:'sz002594',name:'比亚迪'},
+  {code:'sh688981',name:'中芯国际'},
+  {code:'sz300750',name:'宁德时代'}
+];
 let wl = JSON.parse(localStorage.getItem('wl2') || '[]');
+// 兼容旧格式：如果 wl 是字符串数组，转换为对象数组
+if(wl.length && typeof wl[0] === 'string') {
+  wl = wl.map(c => ({code:c, name:NAME_MAP[c]||c}));
+  localStorage.setItem('wl2', JSON.stringify(wl));
+}
 if(!wl.length){ wl=_DEMO.slice(); localStorage.setItem('wl2',JSON.stringify(wl)); }
 let cfg = JSON.parse(localStorage.getItem('cfg2') || '{}');
 let qd = {};
